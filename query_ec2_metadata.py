@@ -20,8 +20,7 @@ def get_token():
         raise SystemExit(f"Error getting token: {e}")
 
 # Recursively retrieves metadata to make sure json has all directory info
-def get_metadata(key_path = ''):
-    token = get_token()
+def get_metadata(token, key_path = ''):
     url = f"{METADATA_URL}/meta-data/{key_path}"
 
     try:
@@ -33,13 +32,13 @@ def get_metadata(key_path = ''):
         response.raise_for_status()
 
         if key_path and not key_path.endswith("/"):
-            return {key_path: response.text}
+            return response.text
 
         data = {}
 
         for item in response.text.strip().split("\n"):
             curr_key = item.strip("/")
-            value = get_metadata(f"{key_path}{item}", token)
+            value = get_metadata(token, f"{key_path}{item}")
             data[curr_key] = value
 
         return data
@@ -48,7 +47,11 @@ def get_metadata(key_path = ''):
         raise SystemExit(f"Failed to get metadata at {url}: {e}")
 
 def get_metadata_json(key = ''):
-    return json.dumps(get_metadata(key), indent = 4)
+    token = get_token()
+    if (key):
+        return json.dumps({key.strip("/"): get_metadata(token, key)}, indent = 4)
+
+    return json.dumps(get_metadata(token), indent = 4)
 
 def main():
     if (len(sys.argv) > 1):
